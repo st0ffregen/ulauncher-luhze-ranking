@@ -12,7 +12,7 @@
             "id": "keyword",
             "type": "keyword",
             "name": "luhze Ranking",
-            "description": "Keyword for this extension",
+            "description": "Choose name to display ranking for",
             "default_value": "luhze"
         }
     ]

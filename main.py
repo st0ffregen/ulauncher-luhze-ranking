@@ -11,6 +11,14 @@ from datetime import datetime
 import json
 
 
+def format_row(rank):
+    diff = str(rank['rankingScoreDiff'])
+    if not diff.startswith('-'):
+        diff = '+' + diff
+                
+    return rank['name'] + '\t\t' + str(rank['rankingScore']) + '\t\t\t\t' + diff
+
+
 class LuhzeRankingExtension(Extension):
 
     def __init__(self):
@@ -20,43 +28,55 @@ class LuhzeRankingExtension(Extension):
 
 class KeywordQueryEventListener(EventListener):
 
-    def add_newest_zeit_online_articles(self, items):
-        url = build_url(self.feed)
-        NewsFeed = feedparser.parse(url)
+    def add_ranking_data(self, items):
 
+        payload = {
+            'dateBackInTime': datetime.strftime(datetime.utcnow(), '%Y-%m-%d')
+        }
 
-        for entry in NewsFeed.entries[:10]:
+        response = requests.get('https://stoffregen.io/luhzeStats/api/ranking', params=payload)
+        
+        if response.status_code != 200:
+            return
+        
+        data = response.json()
 
-            if self.is_corona_ticker_and_maps_included == 'False' and entry.link in corona_ticker_and_maps_articles:
-                continue
-
-            if len(items) == 5:
-                return
-
+        for rank in data[:5]:
+            
             items.append(ExtensionResultItem(icon='images/icon.png',
-                                             name=entry.title,
-                                             description=entry.description,
-                                             on_enter=OpenUrlAction(entry.link)))
+                                             name=format_row(rank),
+                                             description='',
+                                             on_enter=DoNothingAction()))
+
+
+    def add_single_ranking_data(self, items, name):
+        
+        payload = {
+            'dateBackInTime': datetime.strftime(datetime.utcnow(), '%Y-%m-%d'),
+            'name': name
+        }
+        
+        response = requests.get('https://stoffregen.io/luhzeStats/api/singleRanking', params=payload)
+
+        if response.status_code != 200:
+            return
+
+        data = response.json()
+
+        items.append(ExtensionResultItem(icon='images/icon.png',
+                                         name=format_row(data),
+                                         description='',
+                                         on_enter=DoNothingAction()))
 
 
     def on_event(self, event, extension):
         items = []
-        
-        response = requests.get('https://stoffregen.io/luhzeStats/api/ranking?dateBackInTime=' + datetime.strftime(datetime.utcnow(), '%Y-%m-%d'))
-        data = response.json()
+        name = event.get_query()[6:] # remove beginning "luhze "
 
-        for rank in data[:5]:
-            diff = str(rank['rankingScoreDiff'])
-            if not diff.startswith('-'):
-                diff = '+' + diff
-                
-            row = rank['name'] + '\t\t\t' + str(rank['rankingScore']) + '\t\t\t\t' + diff
-
-            items.append(ExtensionResultItem(icon='images/icon.png',
-                                             name=row,
-                                             description='',
-                                             on_enter=DoNothingAction()))
-
+        if name:
+            self.add_single_ranking_data(items, name)
+        else:
+            self.add_ranking_data(items)
 
         return RenderResultListAction(items)
 
