@@ -1,0 +1,19 @@
+{
+    "required_api_version": "^2.0.0",
+    "name": "luhze Ranking",
+    "description": "Shows the ranking of current authors from luhze",
+    "developer_name": "Niclas Stoffregen",
+    "icon": "images/icon.png",
+    "options": {
+        "query_debounce": 0.1
+    },
+    "preferences": [
+        {
+            "id": "keyword",
+            "type": "keyword",
+            "name": "luhze Ranking",
+            "description": "Keyword for this extension",
+            "default_value": "luhze"
+        }
+    ]
+}
